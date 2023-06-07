@@ -1,10 +1,9 @@
 # Importando a biblioteca da criação de jogos
-from imgs import pygame 
+import pygame 
 # Biblioteca de integração para arquivos do pc
 import os 
 # Numeros aleatórios do python para os canos
 import random
-
 # Definindo as constantes do jogo 
 
 TELA_LARGURA = 500
@@ -117,11 +116,11 @@ class Passaro:
         tela.blit(imagem_rotacionada, retangulo.topleft)
         
         
-        # Criando a máscara para que o jogo não fique dando erro no pássaro, utilizando pixels para garantir isso
-        def get_mask(self):
-            # Na hora da colisão irá avaliar a mascara do passaro e a mascara do cano 
-            # Se tiverem pixels em comum, bateram, se n, não bateram
-            pygame.mask.from_surface(self.imagem_passaro)
+    # Criando a máscara para que o jogo não fique dando erro no pássaro, utilizando pixels para garantir isso
+    def get_mask(self):
+    # Na hora da colisão irá avaliar a mascara do passaro e a mascara do cano 
+    # Se tiverem pixels em comum, bateram, se n, não bateram
+        return pygame.mask.from_surface(self.imagem_passaro)
             
         
         
@@ -149,8 +148,8 @@ class Cano:
         # Gerando numero aleatorio em um intervalo entre 50 e 450
         self.altura = random.randrange(50, 450)
         # lembrar que para subir, subtrai, para descer, soma
-        self.posicao_base = self.altura - self.CANO_TOPO.get_height()
-        self.posicao_topo = self.altura + self.DISTANCIA
+        self.posicao_topo = self.altura - self.CANO_TOPO.get_height()
+        self.posicao_base = self.altura + self.DISTANCIA
     
     # Função para mover os canos
     def mover(self, x):
@@ -185,4 +184,147 @@ class Cano:
             return False
     
 class Chao:
-    pass
+    # Definindo constantes
+    VELOCIDADE = 5 
+    LARGURA = IMAGEM_CHAO.get_width()
+    IMAGEM = IMAGEM_CHAO
+
+
+    # Definindo o init só com valor do eixo y
+    # será passado para o chão
+    def __init__(self, y):
+        self.y = y 
+        # x do primeiro chão
+        self.x1 = 0
+        # x do segundo chão
+        self.x2 = self.LARGURA
+        
+    # Criando a função para mover o chão 
+    def mover(self):
+        self.x1 -= self.VELOCIDADE
+        self.x2 -= self.VELOCIDADE
+
+        # Movendo o chão 1 após o chão 2 passar
+        if self.x1 + self.LARGURA < 0:
+            # a lógica irá pegar o primeiro chão e andar apenas a largura que falta
+            # caso não seja 0 especificamente
+            self.x1 = self.x2 + self.LARGURA
+        if self.x2 + self.LARGURA < 0: 
+            self.x2 = self.x1 + self.LARGURA
+
+    # Função para desenhar o chão 
+    def desenhar(self, tela):
+        tela.blit(self.IMAGEM, (self.x1, self.y))
+        tela.blit(self.IMAGEM, (self.x2, self.y))
+        
+
+
+# Criando uma função para desenhar a tela do jogo 
+def desenhar_tela(tela, passaros, canos, chao, pontos):
+    # Desenhar o fundo da tela, passando a imagem e a tupla com a posição inicial
+    tela.blit(IMAGEM_BACKGROUND, (0, 0))
+    
+    # Desenhar o pássaro através de uma lista para os pássaros da IA estarem otimizados
+    for passaro in passaros:
+        passaro.desenhar(tela)
+    
+    # Desenhar o cano através de uma lista de canos para que tenha mais de um na tela
+    for cano in canos: 
+        cano.desenhar(tela)
+        
+    # Colocando o texto na tela passando um parametro para o texto não ficar pixelado e a cor
+    texto = FONTE_PONTOS.render(f"Pontuação: {pontos}", 1, (255, 255, 255))
+    # desenhando o texto no canto da tela passando a largura menos 10 e a posição
+    tela.blit(texto, (TELA_LARGURA - 10 - texto.get_width(), 10 ))
+    # desenhando o chão 
+    chao.desenhar(tela)    
+    # realizando update na tela
+    pygame.display.update()
+    
+
+# Criando a função principal do jogo 
+def main():
+    # Criando os passaros através de uma instancia da classe Passaro
+    passaros = [Passaro(230, 350)]
+    # Criando o chão 
+    chao = Chao(730)
+    # Criando os canos, passando só o x, pois o y é gerado aleatoriamente
+    canos = [Cano(700)]
+    # Criando a tela passando uma tupla com largura e altura
+    tela = pygame.display.set_mode((TELA_LARGURA, TELA_ALTURA))
+    # Definindo pontuação 
+    pontos = 0
+    # Criando um relogio para atualizar a animação do tempo
+    relogio = pygame.time.Clock()
+    
+    
+    # Criando o loop para o jogo continuar rodando
+    rodando = True
+    while rodando:
+        # Andando o tempo do relogio passando os frames por segundo 
+        relogio.tick(30)
+        
+        # Criar a forma de interação do usuário com o game, o evento através de uma lista
+        for evento in pygame.event.get():
+            # Se clicar no x, o pygame irá fechar
+            if evento.type == pygame.QUIT:
+                rodando = False
+                pygame.quit()
+                quit()
+            # Mandando o passaro pular APERTANDO UMA TECLA NO TECLADO
+            if evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_SPACE:
+                    for passaro in passaros: 
+                        passaro.pular()
+        
+        # Movendo os itens do game 
+        for passaro in passaros: 
+            passaro.mover()
+        chao.mover()
+        
+        # Movimentando o cano com cuidado para não colidir os canos
+        # Cria-se uma variavel auxiliar
+        adicionar_cano = False
+        remover_canos = []   
+        
+        for cano in canos: 
+            # Verificar se o cano bateu com o passaro com enumerate, 
+            # irá verificar a posição do passaro dentro da lista para utilizar a função pop 
+            for i, passaro in enumerate(passaros):
+                # Verificando se o passaro colidiu com o ano e removendo, caso sim
+                if cano.colidir(passaro):
+                    passaros.pop(i)
+                # Verificando se o passaro passou do cano e se o x do passaro for maior do que o x do cano, 
+                # a variavel passou será modificado na posição do x cano 
+                if not cano.passou and passaro.x > cano.x:
+                    cano.passou = True
+                    adicionar_cano = True
+            cano.mover()
+            # Verificando se o cano já saiu da tela pegando sua posição e vendo se é menor do que 0 
+            if cano.x + cano.CANO_TOPO.get_width() < 0:
+               # Adiciona uma lista de canos no for do cano, depois que acabar o for, irá adicionar quem tem que adicionar
+               # Excluir quem tem que excluir
+               remover_canos.append(cano)      
+        
+        if adicionar_cano:
+            pontos += 1
+            # Caso ele passe o cano, adiciona um cano na posição do fundo
+            cano.append(Cano(600))
+        
+        # Removendo os canos que passaram 
+        for cano in remover_canos:
+            canos.remove(cano)
+            
+        # Tratando caso o passaro colida com o ceu ou com o chão
+        for i, passaro in enumerate(passaros):
+            # Se a posição y do passaro e o tamanho dele forem maiores que o chão ou caso seja menor que 0
+            if (passaro.y + passaro.imagem_passaro.get_height()) > chao.y or passaro.y < 0:
+                passaros.pop(i)
+        
+        desenhar_tela(tela, passaros, canos, chao, pontos)
+        
+    
+# Rodando a função main, pegando o arquivo python utilizando o name para rodar o arquivo, caso ele seja executado 
+# de forma direta, caso não, ele não irá rodar 
+if __name__ == '__main__':
+    main()
