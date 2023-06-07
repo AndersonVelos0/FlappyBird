@@ -24,6 +24,7 @@ pygame.font.init()
 FONTE_PONTOS = pygame.font.SysFont('arial', 50)
 
 
+
 # Criando os objetos do jogo, classes do Python 
 
 class Passaro:
