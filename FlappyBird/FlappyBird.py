@@ -126,7 +126,63 @@ class Passaro:
         
         
 class Cano:
-    ...
-
+    
+    # Definindo constantes de distancias de um cano para o outro
+    DISTANCIA = 200
+    VELOCIDADE = 5
+    
+    # Definindo a função init, passando só a posição X pois ela será gerada somente dentro dos canos, em qual posição 
+    # do eixo X ele vai estar 
+    def __init__(self, x):
+        self.x = x 
+        self.altura = 0 
+        self.posicao_topo = 0
+        self.posicao_base = 0
+        # flipando no eixo Y
+        self.CANO_TOPO = pygame.transform.flip(IMAGEM_CANO, False, True)
+        self.CANO_BASE = IMAGEM_CANO
+        self.passou = False
+        self.definir_altura()
+        
+    # DEFININDO ALTURA DO CANO     
+    def definir_altura(self):
+        # Gerando numero aleatorio em um intervalo entre 50 e 450
+        self.altura = random.randrange(50, 450)
+        # lembrar que para subir, subtrai, para descer, soma
+        self.posicao_base = self.altura - self.CANO_TOPO.get_height()
+        self.posicao_topo = self.altura + self.DISTANCIA
+    
+    # Função para mover os canos
+    def mover(self, x):
+        # mover os canos de forma negativa tirando valor de x
+        self.x -= self.VELOCIDADE
+    
+    # Função para desenhar o cano
+    def desenhar(self, tela):
+        tela.blit(self.CANO_TOPO, (self.x, self.posicao_topo))
+        tela.blit(self.CANO_BASE, (self.x, self.posicao_base))
+        
+    # Verificando se o cano e o passaro colidem 
+    def colidir(self, passaro):
+        passaro_mask = passaro.get_mask()
+        topo_mask = pygame.mask.from_surface(self.CANO_TOPO)
+        base_mask = pygame.mask.from_surface(self.CANO_BASE)
+        
+        # Deve-se pegar a distancia do topo do cano, para mask do passaro
+        # criando o metodo para verificar a colisão 
+        distancia_topo = (self.x - passaro.x, self.posicao_topo - round(passaro.y)) 
+        distancia_base = (self.x - passaro.x, self.posicao_base - round(passaro.y)) 
+        
+        # calculando a colição 
+        # Overlap verificará se tem pontos em comum entre os pixels, VERDADEIRO OU FALSO
+        topo_ponto = passaro_mask.overlap(topo_mask, distancia_topo)
+        base_ponto = passaro_mask.overlap(base_mask, distancia_base)
+        
+        # Verificando se o passaro colidiu 
+        if base_ponto or topo_ponto:
+            return True
+        else:
+            return False
+    
 class Chao:
     pass
