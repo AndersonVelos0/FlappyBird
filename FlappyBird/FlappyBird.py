@@ -124,6 +124,7 @@ class Passaro:
             pygame.mask.from_surface(self.imagem_passaro)
             
         
+        
 class Cano:
     ...
 
